@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+transformers==4.45.0
+torch==2.4.0
+Pillow==10.4.0
+python-multipart==0.0.9
+pydantic==2.9.0
+SQLAlchemy==2.0.35
+psycopg2-binary==2.9.9
+prometheus-fastapi-instrumentator==7.0.0
+
