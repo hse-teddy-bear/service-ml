@@ -9,7 +9,9 @@ MODEL_NAME = "hse-teddy-bear/xlm-roberta-russian-stock-sentiment"
 
 @torch.no_grad()
 def _load_model():
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    # Используем "slow" токенайзер (use_fast=False), чтобы не пытаться
+    # конвертировать tiktoken BPE и избежать ошибок конвертации.
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, use_fast=False)
     model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
     model.eval()
     return tokenizer, model

@@ -1,8 +1,10 @@
 import os
+import time
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, String, create_engine
+from sqlalchemy import JSON, Boolean, Column, DateTime, Integer, String, create_engine, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import DeclarativeBase, Session
 
 
@@ -33,12 +35,35 @@ class InferenceLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-engine = create_engine(DATABASE_URL, echo=False, future=True)
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    future=True,
+    pool_pre_ping=True,  # Проверка соединения перед использованием
+    connect_args={"connect_timeout": 10},
+)
 
 
 def init_db() -> None:
-    """Создание таблиц при старте приложения."""
-    Base.metadata.create_all(bind=engine)
+    """Создание таблиц при старте приложения с retry логикой."""
+    max_retries = 10
+    retry_delay = 2
+    
+    for attempt in range(max_retries):
+        try:
+            # Проверяем подключение к БД
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            # Если подключение успешно, создаем таблицы
+            Base.metadata.create_all(bind=engine)
+            return
+        except OperationalError as e:
+            if attempt < max_retries - 1:
+                print(f"БД недоступна, попытка {attempt + 1}/{max_retries}. Повтор через {retry_delay}с...")
+                time.sleep(retry_delay)
+            else:
+                print(f"Не удалось подключиться к БД после {max_retries} попыток: {e}")
+                raise
 
 
 def log_inference(

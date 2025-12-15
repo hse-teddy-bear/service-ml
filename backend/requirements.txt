@@ -8,4 +8,7 @@ pydantic==2.9.0
 SQLAlchemy==2.0.35
 psycopg2-binary==2.9.9
 prometheus-fastapi-instrumentator==7.0.0
+tiktoken==0.7.0
+protobuf==5.28.3
+sentencepiece==0.2.0
 

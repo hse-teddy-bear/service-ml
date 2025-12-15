@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -6,15 +8,21 @@ from routers.forward import router as forward_router
 from routers.health import router as health_router
 
 
-app = FastAPI(title="Stock Sentiment Inference Service")
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    # DB tables
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: инициализация БД
     init_db()
-    # Prometheus metrics
-    Instrumentator().instrument(app).expose(app)
+    yield
+    # Shutdown: здесь можно добавить код для завершения работы
+
+
+app = FastAPI(
+    title="Stock Sentiment Inference Service",
+    lifespan=lifespan
+)
+
+# Prometheus middleware должен быть добавлен ДО подключения роутеров
+Instrumentator().instrument(app).expose(app)
 
 
 app.include_router(forward_router)

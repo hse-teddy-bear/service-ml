@@ -12,18 +12,30 @@ services:
       - DB_PORT=5432
       - DB_NAME=features
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - ml-network
 
   frontend:
     build: ./frontend
     container_name: ml-frontend
     restart: unless-stopped
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "8501:8501"
+    networks:
+      - ml-network
 
   db:
     image: postgres:16
@@ -37,6 +49,13 @@ services:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ml-network
 
   prometheus:
     image: prom/prometheus:v2.55.0
@@ -50,6 +69,8 @@ services:
       - "9090:9090"
     depends_on:
       - backend
+    networks:
+      - ml-network
 
   grafana:
     image: grafana/grafana:11.2.2
@@ -62,6 +83,12 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+    networks:
+      - ml-network
+
+networks:
+  ml-network:
+    driver: bridge
 
 volumes:
   db-data:
