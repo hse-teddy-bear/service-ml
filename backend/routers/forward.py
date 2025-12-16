@@ -4,8 +4,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from db import log_inference
-from model import predict_text
+from services.inference import run_forward
 
 
 class TextRequest(BaseModel):
@@ -36,26 +35,6 @@ async def forward(
     if not text_request.text:
         raise HTTPException(status_code=400, detail="bad request")
 
-    try:
-        result = predict_text(text_request.text)
-        log_inference(
-            text=text_request.text,
-            label=result["label"],
-            probs=result["probs"],
-            has_image=False,
-            status="ok",
-        )
-    except RuntimeError:
-        log_inference(
-            text=text_request.text,
-            label=None,
-            probs=None,
-            has_image=False,
-            status="failed",
-        )
-        raise HTTPException(
-            status_code=403, detail="модель не смогла обработать данные"
-        )
+    result = run_forward(text_request.text)
     return JSONResponse(content=result)
-
 

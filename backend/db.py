@@ -39,7 +39,7 @@ engine = create_engine(
     DATABASE_URL,
     echo=False,
     future=True,
-    pool_pre_ping=True,  # Проверка соединения перед использованием
+    pool_pre_ping=True,
     connect_args={"connect_timeout": 10},
 )
 
@@ -86,7 +86,6 @@ def log_inference(
             session.add(entry)
             session.commit()
     except Exception:
-        # Логирование БД не должно ломать основной сервис
         pass
 
 
